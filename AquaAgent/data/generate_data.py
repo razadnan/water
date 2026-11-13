@@ -31,8 +31,10 @@ def generate(path, days=30, seed=42, end="2026-11-12"):
                 cons = max(base_h + extra, 0.0)
                 pressure = cfg["pressure"] * (1 - (cfg["pressure_drop"] if leaking else 0)) + rng.normal(0, 0.6)
                 ph = (5.9 if ph_event else cfg["ph"]) + rng.normal(0, 0.08)
+                from datetime import timedelta
+                dt = date.to_pydatetime() + timedelta(hours=int(h))
                 rows.append(dict(
-                    timestamp=date + pd.Timedelta(hours=h), zone=zone,
+                    timestamp=dt, zone=zone,
                     consumption_l=round(cons, 1), flow_lpm=round(cons / 60 + rng.normal(0, 2), 1),
                     pressure_psi=round(pressure, 2), ph=round(ph, 2),
                     turbidity_ntu=round(abs(rng.normal(2.0, 0.2)), 2)))

@@ -4,16 +4,64 @@ import pandas as pd
 from config import settings
 
 _DF = None
+_VALIDATION_REPORT = {"total_rows": 0, "valid_rows": 0, "dropped_rows": 0, "reasons": {}}
+
+
+def validate_and_clean(df):
+    """
+    Validates incoming telemetry and records detailed drop metrics (FR-03 compliance).
+    Returns (cleaned_df, report_dict).
+    """
+    global _VALIDATION_REPORT
+    df = df.copy()
+    total = len(df)
+    reasons = {"missing_fields": 0, "negative_consumption": 0, "invalid_timestamp": 0, "duplicates": 0}
+
+    df.columns = [c.strip().lower() for c in df.columns]
+    
+    # Check invalid timestamp
+    ts_series = pd.to_datetime(df.get("timestamp"), errors="coerce")
+    reasons["invalid_timestamp"] = int(ts_series.isna().sum())
+    df["timestamp"] = ts_series
+
+    # Check missing critical columns
+    missing_crit = df["timestamp"].isna() | df["zone"].isna() if "zone" in df.columns else df["timestamp"].isna()
+    if "consumption_l" in df.columns:
+        missing_crit = missing_crit | df["consumption_l"].isna()
+    reasons["missing_fields"] = int(missing_crit.sum())
+    df = df.dropna(subset=[c for c in ["timestamp", "zone", "consumption_l"] if c in df.columns])
+
+    # Check negative consumption
+    if "consumption_l" in df.columns:
+        negatives = df["consumption_l"] < 0
+        reasons["negative_consumption"] = int(negatives.sum())
+        df = df[~negatives]
+
+    # Check duplicates
+    if "zone" in df.columns:
+        dup_mask = df.duplicated(subset=["timestamp", "zone"])
+        reasons["duplicates"] = int(dup_mask.sum())
+        df = df.drop_duplicates(subset=["timestamp", "zone"])
+
+    clean_df = df.sort_values("timestamp").reset_index(drop=True)
+    report = {
+        "total_rows": total,
+        "valid_rows": len(clean_df),
+        "dropped_rows": total - len(clean_df),
+        "reasons": reasons
+    }
+    _VALIDATION_REPORT = report
+    return clean_df, report
 
 
 def _clean(df):
-    df = df.copy()
-    df.columns = [c.strip().lower() for c in df.columns]
-    df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
-    df = df.dropna(subset=["timestamp", "zone", "consumption_l"])
-    df = df[df["consumption_l"] >= 0]
-    df = df.drop_duplicates(subset=["timestamp", "zone"])
-    return df.sort_values("timestamp").reset_index(drop=True)
+    clean_df, _ = validate_and_clean(df)
+    return clean_df
+
+
+def get_validation_report():
+    """Return the last data validation report."""
+    return _VALIDATION_REPORT
 
 
 def set_dataframe(df):
