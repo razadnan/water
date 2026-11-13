@@ -22,6 +22,7 @@ from tools import water_tools as wt
 from tools import leakage_tools as lt
 from tools import quality_tools as qt
 from tools import forecast_tools as ft
+from tools.multimodal_ingest import ingest_file
 from memory.semantic_memory import query_incident_memory
 from agents.orchestrator import Orchestrator
 
@@ -265,17 +266,20 @@ async def save_incident(
 
 
 @app.post("/api/upload")
-async def upload_csv(file: UploadFile = File(...), key: Optional[str] = Depends(verify_api_key)):
+async def upload_file(file: UploadFile = File(...), key: Optional[str] = Depends(verify_api_key)):
     contents = await file.read()
     try:
-        raw_df = pd.read_csv(io.BytesIO(contents))
+        raw_df, meta = ingest_file(file.filename, contents)
         clean_df, report = wt.validate_and_clean(raw_df)
         wt.set_dataframe(clean_df)
         return {
             "status": "success",
             "filename": file.filename,
+            "format": meta.get("format"),
+            "extraction_method": meta.get("extraction_method"),
+            "extracted_rows": len(raw_df),
             "validation_report": report,
             "active_zones": wt.list_zones()
         }
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to parse CSV: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Failed to process file ({file.filename}): {str(e)}")

@@ -183,6 +183,7 @@ a{color:inherit;text-decoration:none}
     <div class="navg">
       <h3>Command Center</h3>
       <button class="nav on" onclick="setPage('dashboard')"><span>📊 Overview</span></button>
+      <button class="nav" onclick="setPage('upload')"><span>📁 Ingest Data</span></button>
       <button class="nav" onclick="setPage('investigation')"><span>🤖 AI Investigation</span></button>
       <button class="nav" onclick="setPage('leakage')"><span>🔴 Leakage Risk</span></button>
       <button class="nav" onclick="setPage('quality')"><span>⚗️ Water Quality</span></button>
@@ -307,6 +308,7 @@ function render() {
           <p>Real-time telemetry, agent anomaly scoring & SDG 6 metrics.</p>
         </div>
         <div class="pact">
+          <button class="btn" onclick="setPage('upload')">📁 Ingest Documents / Telemetry</button>
           <button class="btn primary" onclick="runInvestigation('Zone B')">🔍 Investigate Zone B Anomaly</button>
         </div>
       </div>
@@ -379,6 +381,44 @@ function render() {
             <button class="btn primary" onclick="runInvestigation('Zone B')">Execute Full Investigation</button>
           </div>
         </section>
+      </div>
+    `;
+  } else if (state.page === 'upload') {
+    v.innerHTML = `
+      <div class="phead">
+        <div>
+          <h1>📁 Multi-Modal Telemetry & Document Ingestion</h1>
+          <p>Input raw data from <b>CSV, PDF audit reports, DOCX logs, TXT SCADA streams, or Images</b>.</p>
+        </div>
+      </div>
+      <div class="card" style="padding: 30px; text-align: center; border: 2px dashed var(--line); background: var(--surface2);">
+        <div style="font-size: 40px; margin-bottom: 10px;">📄 📊 📷</div>
+        <h2>Upload Telemetry File or Document</h2>
+        <p style="color:var(--muted); margin: 8px 0 20px;">
+          AquaAgent automatically parses tabular data, OCRs utility bills, and extracts flow readings.
+        </p>
+        <input type="file" id="multiFileInput" accept=".csv,.tsv,.pdf,.docx,.doc,.txt,.log,.png,.jpg,.jpeg" style="display:none;" onchange="handleFileUpload(event)">
+        <button class="btn primary" onclick="document.getElementById('multiFileInput').click()" style="padding: 12px 24px; font-size: 15px;">
+          Select File (CSV, PDF, DOCX, TXT, Image)
+        </button>
+        <div id="uploadFeedback" style="margin-top: 20px;"></div>
+      </div>
+      <div class="card" style="margin-top: 20px;">
+        <h2>Supported Formats & Processing Pipelines</h2>
+        <div class="grid g-3" style="margin-top: 14px;">
+          <div class="mini">
+            <b>📊 CSV & TSV</b>
+            <small style="margin-top:4px; display:block;">Direct tabular parsing with missing field and negative flow validation.</small>
+          </div>
+          <div class="mini">
+            <b>📄 PDF & DOCX</b>
+            <small style="margin-top:4px; display:block;">Extracts embedded flow tables, inspection notes, and meter readings automatically.</small>
+          </div>
+          <div class="mini">
+            <b>📝 TXT, SCADA & Images</b>
+            <small style="margin-top:4px; display:block;">ASCII stream parsing & OCR image extraction for analog meter readings.</small>
+          </div>
+        </div>
       </div>
     `;
   } else if (state.page === 'investigation') {
@@ -629,6 +669,42 @@ async function sendChat() {
     }
   } catch (err) {
     document.getElementById(thinkingId).innerText = `Error: ${err}`;
+  }
+}
+
+async function handleFileUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const fb = document.getElementById('uploadFeedback');
+  fb.innerHTML = `<span class="badge blue">⏳ Processing and extracting telemetry from ${file.name}...</span>`;
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Upload failed');
+
+    fb.innerHTML = `
+      <div style="background:var(--surface); border:1px solid var(--good); border-radius:10px; padding:16px; margin-top:14px; text-align:left;">
+        <h3 style="color:var(--good); margin-bottom:6px;">✅ Telemetry Ingested Successfully</h3>
+        <p><b>File:</b> ${data.filename} (${data.format}) · <b>Extraction Method:</b> ${data.extraction_method}</p>
+        <p><b>Extracted Records:</b> ${data.extracted_rows} · <b>Active Zones:</b> ${data.active_zones.join(', ')}</p>
+        <div style="margin-top:10px;">
+          <button class="btn sm primary" onclick="setPage('dashboard')">View in Dashboard</button>
+          <button class="btn sm" onclick="runInvestigation('${data.active_zones[0] || 'Zone B'}')">Run Agent Investigation</button>
+        </div>
+      </div>
+    `;
+    toast(`Successfully processed ${file.name}!`);
+    fetchStatus();
+  } catch (err) {
+    fb.innerHTML = `<span class="badge bad">❌ Error: ${err.message}</span>`;
   }
 }
 
