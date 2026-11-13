@@ -17,12 +17,14 @@ def calculate_leakage_risk(zone):
     cur_p = ctx["cur_hourly"]["pressure_psi"].mean() if "pressure_psi" in ctx["zdf"] else float("nan")
     drop = float((base_p - cur_p) / base_p * 100) if base_p == base_p and base_p > 0 and cur_p == cur_p else 0.0
 
-    comp = {"consumption_anomaly": {"HIGH": 40, "MEDIUM": 20}.get(anom["status"], 0),
-            "night_flow": 30 if ratio >= 3 else 15 if ratio >= 1.5 else 0,
-            "pressure_drop": 20 if drop >= 10 else 10 if drop >= 5 else 0,
-            "persistence": 10 if ctx["persist"] >= 3 else 0}
+    comp = {
+        "consumption_anomaly": {"HIGH": 40, "MEDIUM": 20}.get(anom["status"], 0),
+        "night_flow": 30 if ratio >= 2.5 else 20 if ratio >= 1.5 else 10 if ratio >= 1.25 else 0,
+        "pressure_drop": 20 if drop >= 8.0 else 10 if drop >= 3.0 else 0,
+        "persistence": 10 if ctx["persist"] >= 2 else 0
+    }
     score = sum(comp.values())
-    level = "HIGH" if score >= 70 else "MEDIUM" if score >= 40 else "LOW"
+    level = "HIGH" if score >= 65 else "MEDIUM" if score >= 35 else "LOW"
 
     ev = []
     if anom["status"] != "NORMAL":

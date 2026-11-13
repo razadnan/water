@@ -22,8 +22,8 @@ FORCE_OFFLINE = os.getenv("AQUA_FORCE_OFFLINE", "0") == "1"
 # ---- Analysis parameters ----
 RECENT_DAYS = 7              # newest N days are excluded from the baseline
 NIGHT_HOURS = (1, 2, 3)      # 01:00-04:00 night-flow window
-DEV_HIGH, DEV_MED = 25.0, 15.0   # % deviation thresholds
-Z_HIGH, Z_MED = 3.0, 2.0         # z-score thresholds
+DEV_HIGH, DEV_MED = 20.0, 10.0   # % deviation thresholds (calibrated for incipient & burst leaks)
+Z_HIGH, Z_MED = 2.5, 1.5         # z-score thresholds
 
 # Water-quality limits (configurable per use case; defaults are illustrative)
 QUALITY_LIMITS = {"ph": (6.5, 8.5), "turbidity_ntu": (0.0, 4.0)}

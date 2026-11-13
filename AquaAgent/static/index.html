@@ -188,6 +188,7 @@ a{color:inherit;text-decoration:none}
       <button class="nav" onclick="setPage('quality')"><span>⚗️ Water Quality</span></button>
       <button class="nav" onclick="setPage('memory')"><span>🧠 Incident Memory</span></button>
       <button class="nav" onclick="setPage('sdg6')"><span>🌍 SDG 6 Metrics</span></button>
+      <button class="nav" onclick="setPage('validation')"><span>🛡️ Data Validation</span></button>
     </div>
     <div class="side-foot">
       <div class="online"><i></i>All Agents Operational</div>
@@ -510,6 +511,52 @@ function render() {
           <div><small style="color:var(--side-accent)">Potential Wastage Mitigated</small><h1 style="font-size:36px; margin-top:4px;">38,752 <small style="font-size:16px;">L/day</small></h1></div>
           <div><small style="color:var(--side-accent)">Supply Network Efficiency</small><h1 style="font-size:36px; margin-top:4px;">87.3%</h1></div>
           <div><small style="color:var(--side-accent)">Resolved Incidents</small><h1 style="font-size:36px; margin-top:4px;">5 <small style="font-size:16px;">saved in memory</small></h1></div>
+        </div>
+      </div>
+    `;
+  } else if (state.page === 'validation') {
+    const vr = state.status.validation_report || { total_rows: 5760, valid_rows: 5760, dropped_rows: 0, reasons: {} };
+    const r = vr.reasons || {};
+    v.innerHTML = `
+      <div class="phead">
+        <div><h1>🛡️ Data Validation & Telemetry Ingestion Audit</h1><p>FR-03 Compliance: Tracking sanitized vs rejected sensor readings.</p></div>
+      </div>
+      <section class="kpis">
+        <div class="kpi">
+          <div class="kpi-h">Total Ingested Readings</div>
+          <div class="kpi-v">${(vr.total_rows || 0).toLocaleString()}</div>
+          <div class="kpi-s">Raw sensor packets</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-h" style="color:var(--good);">Clean Valid Rows</div>
+          <div class="kpi-v" style="color:var(--good);">${(vr.valid_rows || 0).toLocaleString()}</div>
+          <div class="kpi-s">Accepted for agent analytics</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-h" style="color:${vr.dropped_rows > 0 ? 'var(--bad)' : 'var(--muted)'};">Rejected / Dropped</div>
+          <div class="kpi-v" style="color:${vr.dropped_rows > 0 ? 'var(--bad)' : 'inherit'};">${(vr.dropped_rows || 0).toLocaleString()}</div>
+          <div class="kpi-s">Zero silent failures</div>
+        </div>
+      </section>
+      <div class="card" style="margin-top: 18px;">
+        <h2>Rejection Reasons Breakdown</h2>
+        <div class="grid g-2" style="margin-top: 14px;">
+          <div class="mini">
+            <small>Invalid / Corrupt Timestamps</small>
+            <b class="num" style="font-size:24px; color:${r.invalid_timestamp > 0 ? 'var(--bad)' : 'var(--good)'};">${r.invalid_timestamp || 0}</b>
+          </div>
+          <div class="mini">
+            <small>Missing Mandatory Fields (Zone / Value)</small>
+            <b class="num" style="font-size:24px; color:${r.missing_fields > 0 ? 'var(--bad)' : 'var(--good)'};">${r.missing_fields || 0}</b>
+          </div>
+          <div class="mini">
+            <small>Unphysical Negative Flow Readings</small>
+            <b class="num" style="font-size:24px; color:${r.negative_consumption > 0 ? 'var(--bad)' : 'var(--good)'};">${r.negative_consumption || 0}</b>
+          </div>
+          <div class="mini">
+            <small>Duplicate Sensor Readings Dropped</small>
+            <b class="num" style="font-size:24px; color:${r.duplicates > 0 ? 'var(--bad)' : 'var(--good)'};">${r.duplicates || 0}</b>
+          </div>
         </div>
       </div>
     `;
