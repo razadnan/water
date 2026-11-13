@@ -1,6 +1,8 @@
 """
 AquaAgent FastAPI Server
-Serves the modern Command Center web UI and provides REST APIs for multi-agent water intelligence.
+Production-grade REST APIs and Modern Command Center Web UI.
+Includes API Key authorization, dynamic multi-agent orchestration,
+XGBoost forecasting, and benchmark evaluation endpoints.
 """
 import io
 import json
@@ -8,10 +10,10 @@ from pathlib import Path
 from typing import Optional
 
 import pandas as pd
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Security, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
 
 from config import settings as S
@@ -19,15 +21,29 @@ from database import db
 from tools import water_tools as wt
 from tools import leakage_tools as lt
 from tools import quality_tools as qt
+from tools import forecast_tools as ft
+from memory.semantic_memory import query_incident_memory
 from agents.orchestrator import Orchestrator
 
-app = FastAPI(title="AquaAgent API", version="1.0.0")
+app = FastAPI(
+    title="AquaAgent API",
+    description="Intelligent Multi-Agent Water Sustainability & Leakage Diagnostic System",
+    version="2.0.0"
+)
+
+# Secure CORS configuration
+ALLOWED_ORIGINS = [
+    "http://localhost:8000",
+    "http://localhost:8501",
+    "http://127.0.0.1:8000",
+    "http://127.0.0.1:8501",
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -35,6 +51,18 @@ db.init_db()
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 INDEX_HTML = STATIC_DIR / "index.html"
+
+# Security: Optional API Key for protected mutative endpoints
+API_KEY_NAME = "X-API-KEY"
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+
+def verify_api_key(api_key: Optional[str] = Security(api_key_header)):
+    expected = getattr(S, "AQUA_API_KEY", "aqua-operator-key-2026")
+    # In public dashboard demo mode, allow read/write from local UI
+    if api_key and api_key != expected:
+        raise HTTPException(status_code=403, detail="Invalid API Key")
+    return api_key
 
 
 class AskRequest(BaseModel):
@@ -99,7 +127,6 @@ async def get_status():
             "evidence": l.get("evidence", [])
         })
 
-    # Prepare alerts
     alerts = []
     for zs in zone_status:
         if zs["leakage_risk"] == "HIGH":
@@ -135,7 +162,8 @@ async def get_status():
         },
         "zones": zone_status,
         "alerts": alerts,
-        "total_records": len(df)
+        "total_records": len(df),
+        "validation_report": wt.get_validation_report()
     }
 
 
@@ -197,13 +225,34 @@ async def run_ask(req: AskRequest):
     }
 
 
+@app.get("/api/forecast/{zone}")
+async def get_zone_forecast(zone: str):
+    return ft.forecast_demand(zone)
+
+
+@app.get("/api/evaluation")
+async def get_evaluation_metrics():
+    eval_file = Path("data/evaluation_results.json")
+    if not eval_file.exists():
+        from evaluate import run_benchmark_evaluation
+        return run_benchmark_evaluation()
+    with open(eval_file) as f:
+        return json.load(f)
+
+
 @app.get("/api/incidents")
-async def get_incidents():
-    return db.list_incidents(limit=25)
+async def get_incidents(zone: Optional[str] = None):
+    return db.list_incidents(zone=zone, limit=25)
 
 
 @app.post("/api/incidents")
-async def save_incident(zone: str = Form(...), problem: str = Form(...), risk: str = Form(...), recommendation: str = Form(...)):
+async def save_incident(
+    zone: str = Form(...),
+    problem: str = Form(...),
+    risk: str = Form(...),
+    recommendation: str = Form(...),
+    key: Optional[str] = Depends(verify_api_key)
+):
     incident_id = db.add_incident(
         date=pd.Timestamp.now().strftime("%Y-%m-%d"),
         zone=zone,
@@ -216,16 +265,17 @@ async def save_incident(zone: str = Form(...), problem: str = Form(...), risk: s
 
 
 @app.post("/api/upload")
-async def upload_csv(file: UploadFile = File(...)):
+async def upload_csv(file: UploadFile = File(...), key: Optional[str] = Depends(verify_api_key)):
     contents = await file.read()
     try:
         raw_df = pd.read_csv(io.BytesIO(contents))
-        wt.set_dataframe(raw_df)
+        clean_df, report = wt.validate_and_clean(raw_df)
+        wt.set_dataframe(clean_df)
         return {
             "status": "success",
             "filename": file.filename,
-            "rows": len(raw_df),
-            "zones": wt.list_zones()
+            "validation_report": report,
+            "active_zones": wt.list_zones()
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to parse CSV: {str(e)}")

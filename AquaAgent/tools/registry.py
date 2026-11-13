@@ -1,6 +1,6 @@
 """Tool registry: name -> callable + description the LLM sees."""
 import inspect
-from tools import water_tools as w, leakage_tools as l, quality_tools as q, memory_tools as m, report_tools as r
+from tools import water_tools as w, leakage_tools as l, quality_tools as q, memory_tools as m, report_tools as r, forecast_tools as f
 
 TOOLS = {
     "get_water_data": (w.get_water_data, "Dataset overview, or latest reading for a zone. args: zone (optional)"),
@@ -9,6 +9,7 @@ TOOLS = {
     "calculate_leakage_risk": (l.calculate_leakage_risk, "Leakage risk score 0-100 from consumption, night flow, pressure, persistence. args: zone"),
     "estimate_water_loss": (w.estimate_water_loss, "Potential water wastage in litres vs baseline. args: zone"),
     "check_water_quality": (q.check_water_quality, "pH/turbidity threshold check. args: zone"),
+    "forecast_demand": (f.forecast_demand, "XGBoost ML demand forecast and evaluation metrics. args: zone"),
     "get_historical_incidents": (m.get_historical_incidents, "Past incidents for a zone from long-term memory. args: zone"),
     "save_incident": (m.save_incident, "Store an incident in long-term memory."),
     "generate_report": (r.generate_report, "Create a markdown report from an investigation."),

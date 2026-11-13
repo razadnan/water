@@ -1,0 +1,39 @@
+{
+  "generated_at": "2026-11-14T02:29:22.936797",
+  "total_records": 5760,
+  "zones": [
+    "Zone A",
+    "Zone B",
+    "Zone C",
+    "Zone D"
+  ],
+  "events": [
+    {
+      "zone": "Zone B",
+      "type": "pipe_burst_leak",
+      "start": "2026-11-05 02:00:00",
+      "end": "2026-11-13 00:00:00",
+      "severity": "HIGH",
+      "magnitude_pct": 32.0,
+      "is_leak": true
+    },
+    {
+      "zone": "Zone C",
+      "type": "incipient_leak",
+      "start": "2026-10-29 01:00:00",
+      "end": "2026-11-13 00:00:00",
+      "severity": "MEDIUM",
+      "magnitude_pct": 14.0,
+      "is_leak": true
+    },
+    {
+      "zone": "Zone D",
+      "type": "legitimate_demand_surge",
+      "start": "2026-10-14 08:00:00",
+      "end": "2026-10-16 20:00:00",
+      "severity": "NON_LEAK",
+      "magnitude_pct": 28.0,
+      "is_leak": false
+    }
+  ]
+}
