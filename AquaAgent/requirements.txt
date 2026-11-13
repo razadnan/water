@@ -1,0 +1,6 @@
+pandas
+numpy
+streamlit
+python-dotenv
+ibm-watsonx-ai
+pytest

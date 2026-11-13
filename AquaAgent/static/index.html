@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AquaAgent — AI Water Sustainability System</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@500;600;700;800&display=swap">
+<style>
+:root{
+  --font-d:'Manrope','Inter',system-ui,sans-serif;
+  --font-b:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --bg:#eaf0f5; --surface:#ffffff; --surface2:#f4f8fb; --line:#d9e3ec; --line2:#e8eef4;
+  --fg:#0c2036; --muted:#566b80; --faint:#8397a9;
+  --accent:#0b8497; --accent-fg:#ffffff; --accent-soft:#dcf1f4; --accent-ink:#06606f;
+  --blue:#1f5fd0; --blue-soft:#e3ecfb;
+  --good:#16794a; --good-soft:#dff3e8; --warn:#a8570a; --warn-soft:#fdeed7; --bad:#c0302d; --bad-soft:#fbe4e2;
+  --side-bg:#0a2540; --side-fg:#e4eef7; --side-muted:#8fa9c2; --side-line:#1a3b5c; --side-active:#13405f; --side-accent:#4fd1e0;
+  --shadow:0 1px 2px rgba(10,37,64,.05),0 8px 24px -12px rgba(10,37,64,.12);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#07121d; --surface:#0f2133; --surface2:#0b1b2b; --line:#1d3550; --line2:#16293f;
+  --fg:#e5eef7; --muted:#92a8bc; --faint:#6a8197;
+  --accent:#3fc6d8; --accent-fg:#04222a; --accent-soft:#0f3a46; --accent-ink:#7fe0ee;
+  --blue:#6c9cf5; --blue-soft:#14284a;
+  --good:#4bd48a; --good-soft:#0f3324; --warn:#f0a850; --warn-soft:#3a2a10; --bad:#ff7b76; --bad-soft:#401a1b;
+  --side-bg:#061220; --side-active:#0f2d46; --side-line:#14304a; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px -12px rgba(0,0,0,.5);
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#07121d; --surface:#0f2133; --surface2:#0b1b2b; --line:#1d3550; --line2:#16293f;
+  --fg:#e5eef7; --muted:#92a8bc; --faint:#6a8197;
+  --accent:#3fc6d8; --accent-fg:#04222a; --accent-soft:#0f3a46; --accent-ink:#7fe0ee;
+  --blue:#6c9cf5; --blue-soft:#14284a;
+  --good:#4bd48a; --good-soft:#0f3324; --warn:#f0a850; --warn-soft:#3a2a10; --bad:#ff7b76; --bad-soft:#401a1b;
+  --side-bg:#061220; --side-active:#0f2d46; --side-line:#14304a; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px -12px rgba(0,0,0,.5);
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;padding:0;background:var(--bg);color:var(--fg);font-family:var(--font-b);font-size:14px;line-height:20px;-webkit-font-smoothing:antialiased}
+h1,h2,h3,p{margin:0}
+button,input,select{font:inherit;color:inherit}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.ic{flex:none}
+.num{font-variant-numeric:tabular-nums}
+
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--font-d);font-weight:800;letter-spacing:.04em;font-size:15px}
+.brand .mark{width:32px;height:32px;border-radius:9px;background:var(--side-accent);color:#04222a;display:grid;place-items:center}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:38px;padding:0 14px;border-radius:9px;border:1px solid var(--line);background:var(--surface);font-weight:600;font-size:13.5px;cursor:pointer;white-space:nowrap;transition:background .15s,border-color .15s}
+.btn:hover{background:var(--surface2);border-color:var(--faint)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.danger{background:var(--bad);border-color:var(--bad);color:#fff}
+.btn.sm{height:32px;padding:0 11px;font-size:13px}
+.iconbtn{width:38px;height:38px;border-radius:9px;border:1px solid var(--line);background:var(--surface);display:inline-grid;place-items:center;cursor:pointer;position:relative}
+.iconbtn:hover{background:var(--surface2)}
+.iconbtn .dotc{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;border-radius:9px;background:var(--bad);color:#fff;font-size:11px;line-height:18px;font-weight:700;text-align:center;padding:0 4px}
+.badge{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:99px;font-size:12px;font-weight:600;white-space:nowrap}
+.badge i{width:7px;height:7px;border-radius:50%;background:currentColor}
+.badge.good{background:var(--good-soft);color:var(--good)}
+.badge.warn{background:var(--warn-soft);color:var(--warn)}
+.badge.bad{background:var(--bad-soft);color:var(--bad)}
+.badge.blue{background:var(--blue-soft);color:var(--blue)}
+.badge.mute{background:var(--surface2);color:var(--muted);border:1px solid var(--line)}
+
+.app{display:grid;grid-template-columns:252px minmax(0,1fr);min-height:100%}
+.side{background:var(--side-bg);color:var(--side-fg);position:sticky;top:0;height:100vh;height:100dvh;display:flex;flex-direction:column;padding:18px 14px 14px max(14px,env(safe-area-inset-left,0px));overflow-y:auto;z-index:50}
+.side .brand{padding:4px 8px 18px}
+.side .tag{color:var(--side-muted);font-size:11.5px;font-weight:500;letter-spacing:0;font-family:var(--font-b);display:block;margin-top:1px}
+.navg{margin-top:12px}
+.navg h3{font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--side-muted);padding:0 10px 6px}
+.nav{display:flex;align-items:center;gap:11px;height:38px;padding:0 10px;border-radius:9px;color:var(--side-fg);font-weight:500;cursor:pointer;border:0;background:none;width:100%;text-align:left}
+.nav:hover{background:rgba(255,255,255,.06)}
+.nav.on{background:var(--side-active);color:#fff;box-shadow:inset 3px 0 0 var(--side-accent)}
+.nav .ic{color:var(--side-muted)}
+.nav.on .ic{color:var(--side-accent)}
+.nav .cnt{margin-left:auto;background:var(--bad);color:#fff;font-size:11px;font-weight:700;border-radius:9px;min-width:20px;height:20px;line-height:20px;text-align:center;padding:0 5px}
+.side-foot{margin-top:auto;border-top:1px solid var(--side-line);padding-top:14px}
+.online{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--side-muted);padding:0 8px 12px}
+.online i,.live i{width:8px;height:8px;border-radius:50%;background:#34d399;box-shadow:0 0 0 0 rgba(52,211,153,.6);animation:pulse 2s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 7px rgba(52,211,153,0)}100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}}
+.me{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px}
+.av{width:34px;height:34px;border-radius:50%;background:var(--side-accent);color:#04222a;font-weight:800;font-family:var(--font-d);display:grid;place-items:center;flex:none}
+.me b{display:block;font-size:13.5px}.me small{color:var(--side-muted);font-size:12px}
+
+.mainwrap{min-width:0;display:flex;flex-direction:column}
+.top{position:sticky;top:0;z-index:40;background:var(--surface);border-bottom:1px solid var(--line);height:60px;display:flex;align-items:center;gap:12px;padding:0 24px}
+.top .menu{display:none}
+.top .ctx{font-family:var(--font-d);font-weight:700;font-size:15px}
+.top .upd{color:var(--muted);font-size:12.5px}
+.top .sp{flex:1}
+.live{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--good);background:var(--good-soft);height:28px;padding:0 11px;border-radius:99px}
+.content{width:100%;max-width:1320px;margin:0 auto;padding:26px 24px 90px;outline:none}
+.phead{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.phead h1{font-family:var(--font-d);font-size:28px;line-height:34px;font-weight:700;letter-spacing:-.01em}
+.phead p{color:var(--muted);margin-top:4px}
+.pact{display:flex;gap:10px;flex-wrap:wrap}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow);min-width:0}
+.card h2{font-family:var(--font-d);font-size:17px;line-height:24px;font-weight:700}
+.card .sub{color:var(--muted);font-size:13px;margin-top:2px}
+.ch{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.grid{display:grid;gap:18px;margin-top:18px}
+.g-main{grid-template-columns:minmax(0,1.7fr) minmax(0,1fr)}
+.g-low{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)}
+.g-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g-21{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;margin-top:18px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.kpi-h{display:flex;align-items:center;gap:10px;color:var(--muted);font-weight:500}
+.kpi-ic{width:34px;height:34px;border-radius:9px;display:grid;place-items:center}
+.kpi-ic.blue{background:var(--blue-soft);color:var(--blue)}.kpi-ic.good{background:var(--good-soft);color:var(--good)}.kpi-ic.warn{background:var(--warn-soft);color:var(--warn)}.kpi-ic.bad{background:var(--bad-soft);color:var(--bad)}
+.kpi-v{font-family:var(--font-d);font-size:30px;line-height:36px;font-weight:800;margin-top:12px;letter-spacing:-.02em}
+.kpi-v small{font-size:15px;font-weight:600;color:var(--muted);margin-left:3px}
+.kpi-s{color:var(--muted);font-size:13px;margin-top:4px}
+.up{color:var(--bad);font-weight:600}.down{color:var(--good);font-weight:600}
+
+.pipe{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 18px;box-shadow:var(--shadow);overflow-x:auto}
+.pipe-l{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:0}
+.pipe-l li{display:flex;align-items:center;gap:11px;position:relative;padding-right:14px}
+.pipe-l li::after{content:"";position:absolute;right:6px;top:50%;width:calc(100% - 190px);min-width:8px;height:2px;background:var(--line)}
+.pipe-l li:last-child::after{display:none}
+.pn{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;flex:none;border:2px solid var(--line);color:var(--faint);font-weight:700;font-size:12px;background:var(--surface)}
+.pipe-l b{display:block;font-size:13.5px}.pipe-l small{color:var(--muted);font-size:12px;display:block}
+.pipe-l li.done .pn{background:var(--good);border-color:var(--good);color:#fff}
+.pipe-l li.active .pn{border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+.pipe-l li.active b{color:var(--accent-ink)}
+
+.tabs{display:inline-flex;background:var(--surface2);border:1px solid var(--line);border-radius:9px;padding:3px;gap:2px}
+.tabs button{border:0;background:none;height:28px;padding:0 11px;border-radius:7px;font-weight:600;font-size:12.5px;color:var(--muted);cursor:pointer}
+.tabs button.on{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgba(10,37,64,.15)}
+
+.zrow{display:grid;grid-template-columns:70px minmax(0,1fr) 54px 84px;gap:12px;align-items:center;padding:11px 0;border-top:1px solid var(--line2)}
+.zrow:first-of-type{border-top:0}
+.zrow b{font-family:var(--font-d)}
+.meter{height:8px;border-radius:99px;background:var(--surface2);border:1px solid var(--line2);overflow:hidden}
+.meter i{display:block;height:100%;border-radius:99px;background:var(--accent)}
+.meter i.good{background:var(--good)}.meter i.warn{background:var(--warn)}.meter i.bad{background:var(--bad)}
+.zrow .sc{text-align:right;font-weight:700}
+
+.reco{border-color:var(--accent);background:linear-gradient(180deg,var(--accent-soft),var(--surface) 70%)}
+.reco .tagl{display:inline-flex;align-items:center;gap:7px;font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent-ink)}
+.reco h2{margin-top:10px;font-size:19px;line-height:26px}
+.reco p.t{color:var(--muted);margin-top:6px}
+.ev{list-style:none;margin:14px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.ev li{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.ev small{display:block;color:var(--muted);font-size:12px}.ev b{font-family:var(--font-d);font-size:17px}
+.rmeta{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;color:var(--muted)}.rmeta b{color:var(--fg)}
+
+.trace{list-style:none;margin:0;padding:0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;display:flex;flex-direction:column;gap:2px}
+.trace li{display:grid;grid-template-columns:68px 170px minmax(0,1fr);gap:10px;padding:7px 10px;border-radius:7px}
+.trace li:nth-child(odd){background:var(--surface2)}
+.trace time{color:var(--faint)}.trace b{color:var(--accent-ink);font-weight:600}
+
+.fab{position:fixed;right:24px;bottom:24px;z-index:45;height:48px;padding:0 20px 0 16px;border-radius:99px;border:0;background:var(--side-bg);color:#fff;display:flex;align-items:center;gap:10px;font-weight:600;cursor:pointer;box-shadow:0 10px 28px -8px rgba(6,18,32,.55)}
+.fab .ic{color:var(--side-accent)}
+.chat{position:fixed;top:0;right:0;bottom:0;width:min(420px,100%);background:var(--surface);border-left:1px solid var(--line);z-index:70;display:flex;flex-direction:column;box-shadow:-20px 0 40px -24px rgba(0,0,0,.35)}
+.chat header{display:flex;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.chat header b{font-family:var(--font-d);display:block}.chat header small{color:var(--muted)}
+.chat header .iconbtn{margin-left:auto}
+.cbody{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:14px}
+.msg{max-width:92%;padding:11px 14px;border-radius:14px;line-height:21px}
+.msg.u{align-self:flex-end;background:var(--accent);color:var(--accent-fg);border-bottom-right-radius:4px}
+.msg.b{align-self:flex-start;background:var(--surface2);border:1px solid var(--line2);border-bottom-left-radius:4px}
+.cform{display:flex;gap:10px;padding:14px 18px;border-top:1px solid var(--line)}
+.inp{height:42px;border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:0 12px;width:100%}
+
+#toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:24px;z-index:100;display:flex;flex-direction:column;gap:8px;align-items:center}
+.toast{background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,.3);animation:tin .2s ease-out}
+@keyframes tin{from{opacity:0;transform:translateY(8px)}}
+</style>
+</head>
+<body>
+
+<div id="app" class="app">
+  <aside class="side" id="side">
+    <div class="brand">
+      <span class="mark">💧</span>
+      <div>AQUAAGENT<span class="tag">AI Water Intelligence · SDG 6</span></div>
+    </div>
+    <div class="navg">
+      <h3>Command Center</h3>
+      <button class="nav on" onclick="setPage('dashboard')"><span>📊 Overview</span></button>
+      <button class="nav" onclick="setPage('investigation')"><span>🤖 AI Investigation</span></button>
+      <button class="nav" onclick="setPage('leakage')"><span>🔴 Leakage Risk</span></button>
+      <button class="nav" onclick="setPage('quality')"><span>⚗️ Water Quality</span></button>
+      <button class="nav" onclick="setPage('memory')"><span>🧠 Incident Memory</span></button>
+      <button class="nav" onclick="setPage('sdg6')"><span>🌍 SDG 6 Metrics</span></button>
+    </div>
+    <div class="side-foot">
+      <div class="online"><i></i>All Agents Operational</div>
+      <div class="me">
+        <span class="av">A</span>
+        <div><b>Aqua Operator</b><small>Sustainability Lead</small></div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="mainwrap">
+    <header class="top">
+      <span class="ctx">💧 AquaAgent — Water Sustainability Command Center</span>
+      <span class="upd" id="upd">Connecting to agents...</span>
+      <span class="sp"></span>
+      <span class="live"><i></i>Live Real-Time Data</span>
+      <button class="iconbtn" onclick="toggleTheme()" id="themeBtn" title="Switch theme">🌓</button>
+    </header>
+
+    <main id="view" class="content">
+      <!-- Dynamic content rendered by JS -->
+    </main>
+  </div>
+
+  <button class="fab" onclick="openChat()">💬 <span>Ask AquaAgent</span></button>
+
+  <aside class="chat" id="chat" hidden>
+    <header>
+      <div class="brand"><span class="mark">🤖</span></div>
+      <div><b>AquaAgent Orchestrator</b><small>Natural Language Decision Support</small></div>
+      <button class="iconbtn" onclick="closeChat()">✕</button>
+    </header>
+    <div class="cbody" id="cbody">
+      <div class="msg b">Hello. I am the AquaAgent Orchestrator. Ask me anything regarding water anomalies, leakage risk, or SDG 6 targets.</div>
+    </div>
+    <form class="cform" onsubmit="event.preventDefault(); sendChat();">
+      <input class="inp" id="cin" placeholder="E.g., Why is Zone B consumption high?" autocomplete="off">
+      <button class="btn primary" type="submit">Ask</button>
+    </form>
+  </aside>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+let state = {
+  page: 'dashboard',
+  status: null,
+  invReport: null,
+  theme: 'light'
+};
+
+function toast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.innerText = msg;
+  document.getElementById('toasts').appendChild(t);
+  setTimeout(() => t.remove(), 2800);
+}
+
+function setPage(p) {
+  state.page = p;
+  document.querySelectorAll('.nav').forEach(btn => {
+    btn.classList.toggle('on', btn.innerText.toLowerCase().includes(p.slice(0, 4)));
+  });
+  render();
+}
+
+function toggleTheme() {
+  state.theme = state.theme === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', state.theme);
+}
+
+async function fetchStatus() {
+  try {
+    const res = await fetch('/api/status');
+    state.status = await res.json();
+    document.getElementById('upd').innerText = `Monitored Records: ${state.status.total_records.toLocaleString()} readings`;
+    render();
+  } catch (err) {
+    console.error("API error:", err);
+  }
+}
+
+async function runInvestigation(zone = 'Zone B') {
+  toast(`Orchestrator activating agents for ${zone}...`);
+  try {
+    const res = await fetch('/api/investigate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ zone: zone })
+    });
+    state.invReport = await res.json();
+    toast(`Investigation completed for ${zone}!`);
+    setPage('investigation');
+  } catch (err) {
+    toast(`Failed to investigate: ${err}`);
+  }
+}
+
+function render() {
+  const v = document.getElementById('view');
+  if (!state.status) {
+    v.innerHTML = `<div class="card"><h2>Connecting to AquaAgent services...</h2></div>`;
+    return;
+  }
+
+  const k = state.status.kpi;
+  const zones = state.status.zones;
+
+  if (state.page === 'dashboard') {
+    v.innerHTML = `
+      <div class="phead">
+        <div>
+          <h1>Water Sustainability Overview</h1>
+          <p>Real-time telemetry, agent anomaly scoring & SDG 6 metrics.</p>
+        </div>
+        <div class="pact">
+          <button class="btn primary" onclick="runInvestigation('Zone B')">🔍 Investigate Zone B Anomaly</button>
+        </div>
+      </div>
+
+      <div class="pipe">
+        <ol class="pipe-l">
+          <li class="done"><span class="pn">✓</span><div><b>Data Validation</b><small>Sensors & Ingestion</small></div></li>
+          <li class="done"><span class="pn">✓</span><div><b>Anomaly Agent</b><small>Statistical deviations</small></div></li>
+          <li class="active"><span class="pn">3</span><div><b>Leakage Agent</b><small>Night-flow correlation</small></div></li>
+          <li class="active"><span class="pn">4</span><div><b>Orchestrator</b><small>Multi-agent plan</small></div></li>
+          <li><span class="pn">5</span><div><b>Recommendation</b><small>Actionable audit</small></div></li>
+        </ol>
+      </div>
+
+      <section class="kpis">
+        <div class="kpi">
+          <div class="kpi-h"><span class="kpi-ic blue">💧</span>Total Daily Usage</div>
+          <div class="kpi-v">${(k.daily_consumption_l / 1000).toFixed(1)}k <small>Litres/day</small></div>
+          <div class="kpi-s">Live telemetry aggregation</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-h"><span class="kpi-ic warn">🚨</span>Active Alerts</div>
+          <div class="kpi-v">${k.consumption_alerts} <small>Anomalies</small></div>
+          <div class="kpi-s">${k.high_leakage_risks} High Leakage · ${k.quality_warnings} Quality</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-h"><span class="kpi-ic bad">🔴</span>High Leakage Risks</div>
+          <div class="kpi-v">${k.high_leakage_risks} <small>Zone B</small></div>
+          <div class="kpi-s up">Score 100/100 (Critical)</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-h"><span class="kpi-ic good">🌍</span>Potential Water Loss</div>
+          <div class="kpi-v">${k.potential_wastage_l_day.toLocaleString()} <small>L/day</small></div>
+          <div class="kpi-s down">Actionable mitigation</div>
+        </div>
+      </section>
+
+      <div class="grid g-main">
+        <section class="card">
+          <div class="ch">
+            <div>
+              <h2>Zone Status Matrix</h2>
+              <div class="sub">Current flow vs historical baseline</div>
+            </div>
+          </div>
+          <div>
+            ${zones.map(z => `
+              <div class="zrow">
+                <b>${z.zone}</b>
+                <div class="meter">
+                  <i class="${z.leakage_risk === 'HIGH' ? 'bad' : (z.leakage_risk === 'MEDIUM' ? 'warn' : 'good')}" style="width: ${z.leakage_score}%"></i>
+                </div>
+                <span class="sc num">${z.leakage_score}/100</span>
+                <span class="badge ${z.leakage_risk === 'HIGH' ? 'bad' : (z.leakage_risk === 'MEDIUM' ? 'warn' : 'good')}">${z.leakage_risk}</span>
+              </div>
+            `).join('')}
+          </div>
+        </section>
+
+        <section class="card reco">
+          <div class="tagl">🤖 Active Agent Intelligence</div>
+          <h2>Zone B: Urgent Leakage Detected</h2>
+          <p class="t">Consumption is <b>+29.7%</b> above baseline with night-flow surging 5.2x normal. Immediate inspection recommended.</p>
+          <ul class="ev">
+            <li><small>Night Flow (01-04)</small><b>1,428 L/h</b></li>
+            <li><small>Pressure Drop</small><b>-15.2%</b></li>
+            <li><small>Est. Wastage</small><b>24,335 L/d</b></li>
+          </ul>
+          <div style="margin-top: 18px;">
+            <button class="btn primary" onclick="runInvestigation('Zone B')">Execute Full Investigation</button>
+          </div>
+        </section>
+      </div>
+    `;
+  } else if (state.page === 'investigation') {
+    const rep = state.invReport;
+    if (!rep) {
+      v.innerHTML = `
+        <div class="phead">
+          <div><h1>AI Multi-Agent Investigation</h1><p>Trigger autonomous root-cause investigation across zones.</p></div>
+        </div>
+        <div class="card" style="text-align: center; padding: 40px;">
+          <h3>No investigation active yet</h3>
+          <p style="color:var(--muted); margin: 10px 0 20px;">Select a zone to run the multi-agent orchestration pipeline.</p>
+          <button class="btn primary" onclick="runInvestigation('Zone B')">🚀 Run Investigation on Zone B</button>
+        </div>
+      `;
+      return;
+    }
+
+    v.innerHTML = `
+      <div class="phead">
+        <div>
+          <h1>Multi-Agent Investigation — ${rep.zone}</h1>
+          <p>Model Engine: <b>${rep.llm || 'IBM watsonx Resilient'}</b> · Execution: Autonomous</p>
+        </div>
+        <div class="pact">
+          <button class="btn" onclick="runInvestigation('${rep.zone}')">🔄 Re-run</button>
+        </div>
+      </div>
+
+      <div class="card" style="border-left: 4px solid var(--bad); margin-bottom: 20px;">
+        <h2>Agent Execution Sequence</h2>
+        <div class="grid g-3" style="margin-top: 14px;">
+          ${(rep.workflow || []).map(w => `
+            <div class="mini" style="background:var(--surface2); border:1px solid var(--line);">
+              <small>Agent: <b>${w.agent}</b></small>
+              <div style="margin-top: 6px; font-size: 13px;">${w.summary}</div>
+              <small style="color:var(--faint); margin-top: 6px; display:block;">Status: ${w.status} · Calls: ${w.tool_calls}</small>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="grid g-2">
+        <section class="card">
+          <h2>🔍 Discovered Telemetry Evidence</h2>
+          <ul class="ev" style="grid-template-columns: 1fr; margin-top: 14px;">
+            ${(rep.evidence || []).map(e => `
+              <li><b>${e}</b></li>
+            `).join('')}
+          </ul>
+        </section>
+
+        <section class="card reco">
+          <div class="tagl">💡 Priority Recommendation</div>
+          <h2>Priority: ${rep.recommendation?.priority || 'High'}</h2>
+          <div style="margin: 12px 0;">
+            ${(rep.recommendation?.actions || []).map(a => `<p style="margin-bottom: 8px;">👉 <b>${a}</b></p>`).join('')}
+          </div>
+          ${rep.recommendation?.expected_benefit ? `<div class="badge good" style="height:auto; padding:8px 12px; margin-top:10px;">💧 Impact: ${rep.recommendation.expected_benefit}</div>` : ''}
+        </section>
+      </div>
+
+      <div class="card" style="margin-top: 20px;">
+        <h2>⏱️ Orchestrator Tool Execution Log</h2>
+        <div style="overflow-x:auto; margin-top: 10px;">
+          <ul class="trace">
+            ${(rep.activity_log || []).map(log => `
+              <li><time>${log.time}</time><b>${log.agent}</b><span>${log.event}: ${log.detail}</span></li>
+            `).join('')}
+          </ul>
+        </div>
+      </div>
+    `;
+  } else if (state.page === 'leakage') {
+    v.innerHTML = `
+      <div class="phead">
+        <div><h1>🔴 Leakage Risk Assessment</h1><p>Heuristic probability combining night flow, pressure & persistence.</p></div>
+      </div>
+      <div class="grid g-2">
+        ${zones.map(z => `
+          <div class="card" style="border-left: 4px solid ${z.leakage_risk === 'HIGH' ? 'var(--bad)' : 'var(--good)'}">
+            <h2>${z.zone} — ${z.leakage_risk} RISK (${z.leakage_score}/100)</h2>
+            <div class="meter" style="margin: 12px 0;">
+              <i class="${z.leakage_risk === 'HIGH' ? 'bad' : 'good'}" style="width: ${z.leakage_score}%"></i>
+            </div>
+            <p style="color:var(--muted)">Telemetry metrics:</p>
+            <ul style="margin: 8px 0; padding-left: 20px;">
+              <li>Current Consumption: <b>${z.current_l.toLocaleString()} L/day</b></li>
+              <li>Baseline Average: <b>${z.baseline_l.toLocaleString()} L/day</b></li>
+              <li>Deviation: <b>${z.deviation_pct >= 0 ? '+' : ''}${z.deviation_pct.toFixed(1)}%</b></li>
+              <li>Potential Loss: <b>${z.potential_wastage_l.toLocaleString()} L/day</b></li>
+            </ul>
+            <button class="btn sm primary" onclick="runInvestigation('${z.zone}')">Investigate</button>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  } else if (state.page === 'quality') {
+    v.innerHTML = `
+      <div class="phead">
+        <div><h1>⚗️ Water Quality Telemetry</h1><p>Tracking pH and Turbidity against nominal environmental thresholds.</p></div>
+      </div>
+      <div class="grid g-3">
+        <div class="kpi">
+          <div class="kpi-h">Zone A Quality</div>
+          <div class="kpi-v">7.29 <small>pH (Nominal)</small></div>
+          <div class="kpi-s">Turbidity: 2.0 NTU</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-h">Zone B Quality</div>
+          <div class="kpi-v">7.21 <small>pH (Nominal)</small></div>
+          <div class="kpi-s">Turbidity: 2.02 NTU</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-h" style="color:var(--bad);">Zone C Warning</div>
+          <div class="kpi-v" style="color:var(--bad);">5.90 <small>pH (Acidic Alert)</small></div>
+          <div class="kpi-s">Outside permitted threshold [6.5 - 8.5]</div>
+        </div>
+      </div>
+    `;
+  } else if (state.page === 'sdg6') {
+    v.innerHTML = `
+      <div class="phead">
+        <div><h1>🌍 UN Sustainable Development Goal 6</h1><p>Clean Water and Sanitation Target Alignment.</p></div>
+      </div>
+      <div class="card" style="background:var(--side-bg); color:#fff; padding: 30px;">
+        <h2>SDG Target 6.4: Water-Use Efficiency</h2>
+        <p style="color:var(--side-muted); margin: 10px 0 20px;">AquaAgent directly supports Target 6.4 by proactively eliminating non-revenue water wastage via autonomous detection.</p>
+        <div class="grid g-3">
+          <div><small style="color:var(--side-accent)">Potential Wastage Mitigated</small><h1 style="font-size:36px; margin-top:4px;">38,752 <small style="font-size:16px;">L/day</small></h1></div>
+          <div><small style="color:var(--side-accent)">Supply Network Efficiency</small><h1 style="font-size:36px; margin-top:4px;">87.3%</h1></div>
+          <div><small style="color:var(--side-accent)">Resolved Incidents</small><h1 style="font-size:36px; margin-top:4px;">5 <small style="font-size:16px;">saved in memory</small></h1></div>
+        </div>
+      </div>
+    `;
+  } else if (state.page === 'memory') {
+    v.innerHTML = `
+      <div class="phead">
+        <div><h1>🧠 Long-Term Memory Incident Store</h1><p>Historical incident memory enabling context-aware recommendation reasoning.</p></div>
+      </div>
+      <div class="card">
+        <h2>Persisted Historical Incidents</h2>
+        <div id="inc-list" style="margin-top: 14px;">Loading incidents...</div>
+      </div>
+    `;
+    fetch('/api/incidents').then(r => r.json()).then(data => {
+      const el = document.getElementById('inc-list');
+      if (el) {
+        el.innerHTML = data.map(inc => `
+          <div style="padding: 12px 0; border-top: 1px solid var(--line2);">
+            <b>${inc.date} — ${inc.zone}: ${inc.problem}</b> (Status: <span class="badge ${inc.status === 'Resolved' ? 'good' : 'warn'}">${inc.status}</span>)
+            <p style="color:var(--muted); margin-top: 4px;">Recommendation: ${inc.recommendation}</p>
+            ${inc.resolution ? `<small style="color:var(--good);">Resolution: ${inc.resolution}</small>` : ''}
+          </div>
+        `).join('');
+      }
+    });
+  }
+}
+
+function openChat() {
+  document.getElementById('chat').hidden = false;
+  document.getElementById('cin').focus();
+}
+
+function closeChat() {
+  document.getElementById('chat').hidden = true;
+}
+
+async function sendChat() {
+  const cin = document.getElementById('cin');
+  const txt = cin.value.trim();
+  if (!txt) return;
+
+  const cb = document.getElementById('cbody');
+  cb.innerHTML += `<div class="msg u">${txt}</div>`;
+  cin.value = '';
+  cb.scrollTop = cb.scrollHeight;
+
+  const thinkingId = 'think_' + Date.now();
+  cb.innerHTML += `<div class="msg b" id="${thinkingId}"><i>Orchestrator consulting agents...</i></div>`;
+  cb.scrollTop = cb.scrollHeight;
+
+  try {
+    const res = await fetch('/api/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: txt })
+    });
+    const data = await res.json();
+    const rep = data.report;
+    const th = document.getElementById(thinkingId);
+    if (rep) {
+      th.innerHTML = `
+        <b>Analysis for ${rep.zone}:</b><br>
+        Risk Level: <b>${rep.risk_level} (${rep.risk_score}/100)</b><br>
+        Recommendation: ${rep.recommendation?.actions?.[0] || 'Inspection suggested.'}<br>
+        <button class="btn sm" style="margin-top:8px;" onclick="state.invReport = ${JSON.stringify(rep).replace(/"/g, '&quot;')}; setPage('investigation'); closeChat();">View Complete Investigation Report</button>
+      `;
+    } else {
+      th.innerText = "All monitored zones are currently normal. No critical anomalies detected.";
+    }
+  } catch (err) {
+    document.getElementById(thinkingId).innerText = `Error: ${err}`;
+  }
+}
+
+fetchStatus();
+setInterval(fetchStatus, 30000);
+</script>
+</body>
+</html>
